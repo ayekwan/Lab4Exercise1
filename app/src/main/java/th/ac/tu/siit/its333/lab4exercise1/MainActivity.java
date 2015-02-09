@@ -30,6 +30,24 @@ public class MainActivity extends ActionBarActivity {
 
         // This method is called when this activity is put foreground.
 
+        helper = new CourseDBHelper(this);
+        SQLiteDatabase db = helper.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT SUM(credit) cr, SUM(credit*value) gp FROM course", null);
+
+        cursor.moveToFirst();
+        Double totalCredit = cursor.getDouble(0); // get the first column
+        Double totalGP = cursor.getDouble(1);
+
+        String GPA = String.format("%.2f", (totalGP / totalCredit));
+
+        TextView tcr = (TextView)findViewById(R.id.tvCR);
+        tcr.setText(String.format("%.0f", totalCredit));
+
+        TextView tgp = (TextView)findViewById(R.id.tvGP);
+        tgp.setText(String.format("%.2f", totalGP));
+
+        TextView tvGpa = (TextView)findViewById(R.id.tvGPA);
+        tvGpa.setText(GPA);
     }
 
     public void buttonClicked(View v) {
@@ -48,7 +66,11 @@ public class MainActivity extends ActionBarActivity {
                 break;
 
             case R.id.btReset:
+                helper = new CourseDBHelper(this);
+                SQLiteDatabase db = helper.getWritableDatabase();
+                db.delete("course","",null);
 
+                onResume();
                 break;
         }
     }
@@ -60,6 +82,15 @@ public class MainActivity extends ActionBarActivity {
                 String code = data.getStringExtra("code");
                 int credit = data.getIntExtra("credit", 0);
                 String grade = data.getStringExtra("grade");
+
+                helper = new CourseDBHelper(this);
+                SQLiteDatabase db = helper.getWritableDatabase();
+                ContentValues r = new ContentValues();
+                r.put("code", code);
+                r.put("credit", credit);
+                r.put("grade", grade);
+                r.put("value", gradeToValue(grade));
+                long new_id = db.insert("course", null, r);
 
             }
         }
